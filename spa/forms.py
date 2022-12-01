@@ -7,7 +7,7 @@ from .models import Student
 
 # User = settings.AUTH_USER_MODEL
 
-class UserForm(SignupForm):
+class UserRegistrationForm(SignupForm):
 	first_name = forms.CharField(max_length=200)
 	last_name = forms.CharField(max_length=200)
 	# email = forms.EmailField()
@@ -20,6 +20,15 @@ class StudentForm(forms.ModelForm):
 	class Meta:
 		model = Student 
 		fields = ['reg_no', 'department', 'level']
+
+class LoginForm(forms.Form):
+	email = forms.EmailField()
+	password = forms.CharField(widget=forms.PasswordInput)
+
+class UserForm(forms.ModelForm):
+	class Meta:
+		model = User 
+		fields = ['first_name', 'last_name', 'email']
 
 # class UserRegisterForm(UserRegistrationForm):
 # 	class Meta:

@@ -3,8 +3,8 @@
 	<a href="#" class="navbar-brand">
 		<div class="d-flex align-items-center">
 			<img src="{% static 'images/uniuyo-logo.png' %}" width="50" height="50">
-			<h3 class="ml-2 d-none d-lg-block">Student Project Management System</h3>
-			<h3 class="ml-2 d-block d-lg-none">SPMS</h3>
+			<h3 class="ml-2 d-none d-xl-block">Student Project Management System</h3>
+			<h3 class="ml-2 d-block d-xl-none">SPMS</h3>
 		</div>
 	</a>
 	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
@@ -12,34 +12,50 @@
 	</button>
 
 	<div id="collapsibleNavbar" class="collapse navbar-collapse">
-		<ul class="navbar-nav ml-lg-auto">
-			<li class="nav-item">
-				<a href="#" class="nav-link text-white">
-					<i class="fa-solid fa-house"></i>
-					<span class="font-weight-bold">Dashboard</span>
-				</a>
-			</li>
-			<li class="nav-item">
-				<a href="#" class="nav-link text-white">
-					<i class="fa-solid fa-list-check"></i>
-					<span class="font-weight-bold">Projects</span>
-				</a>
-			</li>
-			<li class="nav-item">
-				<a href="#" class="nav-link text-white">
-					<i class="fa-solid fa-user-graduate"></i>
-					<span class="font-weight-bold">Students</span>
-				</a>
-			</li>
-			<!-- <li class="nav-item">
-				<a href="#" class="nav-link text-white"></a>
-			</li>
-			<li class="nav-item">
-				<a href="#" class="nav-link text-white"></a>
-			</li>
-			<li class="nav-item">
-				<a href="#" class="nav-link text-white"></a>
-			</li> -->
+		<ul class="navbar-nav ml-lg-auto d-flex align-items-center">
+			{% if request.user.is_authenticated %}
+				<li class="nav-item">
+					<a href="#" class="nav-link text-white">
+						<i class="fa-solid fa-house"></i>
+						<span class="font-weight-bold">Dashboard</span>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="#" class="nav-link text-white">
+						<i class="fa-solid fa-list-check"></i>
+						<span class="font-weight-bold">Projects</span>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="#" class="nav-link text-white">
+						<i class="fa-solid fa-user-graduate"></i>
+						<span class="font-weight-bold">Students</span>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="javascript:void" class="nav-link text-white font-weight-bold">Hello {{request.user}}</a>
+				</li>
+				<li class="nav-item">
+					<a href="{% url 'account_logout' %}" class="nav-link">
+						<button class="btn btn-danger">Logout</button>
+					</a>
+				</li>
+
+			{% else %}
+
+				<li class="nav-item">
+					<a href="{% url 'account_login' %}" class="nav-link">
+						<button class="btn btn-primary">Login</button>
+					</a>
+				</li>
+				<li class="nav-item">
+					<a href="{% url 'account_signup' %}" class="nav-link">
+						<button class="btn btn-success">Sign Up</button>
+					</a>
+				</li>
+
+			{% endif %}
+			
 		</ul>
 	</div>
 </nav>

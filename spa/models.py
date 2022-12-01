@@ -29,5 +29,5 @@ class Student(models.Model):
 	level = models.CharField(max_length=50, choices=LEVEL, default='500 Level')
 	date_joined = models.DateTimeField(default=timezone.now)
 
-	# def __str__(self):
-	# 	return f'{self.user.first_name} {self.user.last_name}'
+	def __str__(self):
+		return f'{self.user.first_name} {self.user.last_name}'
