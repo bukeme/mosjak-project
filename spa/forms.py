@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from allauth.account.forms import SignupForm
-from .models import Student
+from .models import Student, Project
 
 # User = settings.AUTH_USER_MODEL
 
@@ -29,6 +29,11 @@ class UserForm(forms.ModelForm):
 	class Meta:
 		model = User 
 		fields = ['first_name', 'last_name', 'email']
+
+class ProjectForm(forms.ModelForm):
+	class Meta:
+		model = Project 
+		fields = ['title', 'case_study']
 
 # class UserRegisterForm(UserRegistrationForm):
 # 	class Meta:
