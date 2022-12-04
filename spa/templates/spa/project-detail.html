@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}{{project.title}}{% endblock title %}
+
+{% block content %}
+
+	<h2 class="text-center mt-4">"{{project.title}}" Project</h2>
+	<div class="row p-5">
+		<div class="col-lg-4">
+
+			<h5 class="mb-2">Project Details:</h5>
+			<form method="post">
+				{% csrf_token %}
+				<div>
+					{% if form.non_field_errors %}
+						<ol>
+							{% for error in form.non_field_errors %}
+								<li><strong>{{error|escape}}</strong></li>
+							{% endfor %}
+						</ol>
+					{% endif %}
+				</div>
+				<div class="fieldWrapper form-group">
+					<label for="{{form.title.id_for_title}}">Title</label>
+					<div class="form-group">
+						<input type="text" {% if request.user.student not in project.student_set.all and not request.user.is_staff %}disabled{% endif %} name="title" id="id_title" class="form-control" value="{{project.title}}">
+						<i class="fa-solid fa-pen input-icon"></i>
+					</div>
+					{% if form.title.errors %}
+						<ul class="list-unstyled" style="margin-top: -0.9rem;">
+							{% for error in form.title.errors %}
+								<li class="text-danger font-italic small">{{error | escape}}</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+				<div class="fieldWrapper form-group">
+					<label for="{{form.case_study.id_for_case_study}}">Case Study</label>
+					<div class="form-group">
+						<input type="text" {% if request.user.student not in project.student_set.all and not request.user.is_staff %}disabled{% endif %} name="case_study" id="id_case_study" class="form-control" value="{{project.case_study}}">
+						<i class="fa-solid fa-pen input-icon"></i>
+					</div>
+					{% if form.case_study.errors %}
+						<ul class="list-unstyled" style="margin-top: -0.9rem;">
+							{% for error in form.case_study.errors %}
+								<li class="text-danger font-italic small">{{error | escape}}</li>
+							{% endfor %}
+						</ul>
+					{% endif %}
+				</div>
+				<div class="form-check mb-2">
+					<input type="checkbox" {% if project.group_project %}checked{% endif %} disabled class="form-check-input" id="id_checkbox">
+					<label for="id_checkbox" class="form-check-label">Group Project</label>
+				</div>
+				{% if request.user.student in project.student_set.all or request.user.is_staff %}
+					<div class="form-group select">
+						<label for="id_users">Project Participants</label>
+						<select multiple class="form-control" id="id_users" name="students" style="padding-left: 0.75rem;">
+							{% for student in students %}
+								<option value="{{student.pk}}" {% if student in project.student_set.all %}selected{% endif %}>{{student.user.email}}</option>
+							{% endfor %}
+						</select>
+					</div>
+				{% endif %}
+			</form>
+		</div>
+		<div class="col-lg-8">
+			<h5 class="mb-2">Project Participants</h5>
+			<div class="table-responsive">
+				<table class="table table-striped table-bordered">
+					<thead class="thead-dark">
+						<tr>
+							<th>S/N</th>
+							<th>Name</th>
+							<th>Email</th>
+							<th>Department</th>
+							<th>Level</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for student in project.student_set.all %}
+
+							<tr>
+								<td>{{forloop.counter}}</td>
+								<td>{{student.user.first_name}} {{student.user.last_name}}</td>
+								<td>{{student.user.email}}</td>
+								<td>{{student.department}}</td>
+								<td>{{student.level}}</td>
+							</tr>
+
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+{% endblock content %}

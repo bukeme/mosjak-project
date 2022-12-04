@@ -46,7 +46,7 @@ class Student(models.Model):
 	reg_no = models.CharField(max_length=50)
 	department = models.CharField(max_length=100, choices=DEPARTMENTS)
 	level = models.CharField(max_length=50, choices=LEVEL, default='500 Level')
-	project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True)
+	project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
 	date_joined = models.DateTimeField(default=timezone.now)
 
 	def __str__(self):
