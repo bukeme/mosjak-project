@@ -75,11 +75,17 @@ class LoginView(RedirectLoggedInUser, generic.TemplateView):
 			user = auth.authenticate(username=username, password=password)
 			if user is not None: # Checks if user exist
 				auth.login(request, user)
-				return redirect('student_dashboard')
+				return redirect(reverse('student_dashboard', kwargs={'pk': user.pk}))
 		messages.error(request, "Incorrect password")
 		return self.render_to_response({'form': form})
 
 login = LoginView.as_view()
+
+class RedirectToDashboard(View):
+	def dispatch(self, request, *args, **kwargs):
+		return redirect(reverse('student_dashboard', kwargs={'pk': request.user.pk}))
+
+redirect_to_dashboard = RedirectToDashboard.as_view()
 
 
 class StudentDashboardView(LoginRequiredMixin, generic.TemplateView):
@@ -90,33 +96,50 @@ class StudentDashboardView(LoginRequiredMixin, generic.TemplateView):
 			return redirect('admin_dashboard') 
 		return super().dispatch(request, *args, **kwargs)
 
-	def post(self, request, *args, **kwargs):
-		# Save Updates
-		u_form = UserForm(request.POST, instance=request.user)
-		s_form = StudentForm(request.POST, instance=request.user.student)
-		if u_form.is_valid():
-			u_form.save()
-			s_form.save()
-			return redirect('student_dashboard')
-		return self.render_to_response({"u_form": u_form, 's_form': s_form})
-
-
 	def get_context_data(self, *args, **kwargs):
 		# Pass Forms 
 		context = super().get_context_data(*args, **kwargs)
 		context['u_form'] = UserForm()
 		context['s_form'] = StudentForm()
 		context['p_form'] = ProjectForm()
+		context['user'] = User.objects.get(pk=kwargs['pk'])
 		return context
 
 student_dashboard = StudentDashboardView.as_view()
+
+class StudentUpdateView(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
+	template_name = 'spa/student-update.html'
+
+	def post(self, request, *args, **kwargs):
+		# Save Updates
+		user = User.objects.get(pk=kwargs['pk'])
+		u_form = UserForm(request.POST, instance=user)
+		s_form = StudentForm(request.POST, instance=user.student)
+		if u_form.is_valid():
+			u_form.save()
+			s_form.save()
+			return redirect(reverse('student_dashboard', kwargs={'pk': kwargs['pk']}))
+		return self.render_to_response({"u_form": u_form, 's_form': s_form})
+
+	def get_context_data(self, *args, **kwargs):
+		# Pass Forms 
+		context = super().get_context_data(*args, **kwargs)
+		context['u_form'] = UserForm()
+		context['s_form'] = StudentForm()
+		context['user'] = User.objects.get(pk=kwargs['pk'])
+		return context
+
+	def test_func(self):
+		return User.objects.get(pk=self.kwargs['pk']) == self.request.user or self.request.user.is_staff
+
+student_update = StudentUpdateView.as_view()
 
 class AdminDashboardView(LoginRequiredMixin, generic.TemplateView):
 	template_name = 'spa/admin-dashboard.html'
 
 	def dispatch(self, request, *args, **kwargs):
 		if not request.user.is_staff:
-			return redirect('student_dashboard') 
+			return redirect(reverse('student_dashboard', kwargs={'pk': request.user.pk})) 
 		return super().dispatch(request, *args, **kwargs)
 
 	def post(self, request, *args, **kwargs):
@@ -152,7 +175,6 @@ def project_post_action(self, request, action, pk=None):
 			# If group members are added
 			try:
 				students = list(map(lambda x: int(x), request.POST.getlist('students')))
-				print(type(students))
 				if action == 'register':
 					for student_id in students:
 						student = Student.objects.get(pk=student_id)
@@ -169,7 +191,6 @@ def project_post_action(self, request, action, pk=None):
 								'students': Student.objects.exclude(user=self.request.user),
 								'form_data': form_data,
 							}
-							print(form)
 							return self.render_to_response(context)
 			except:
 				pass
@@ -261,7 +282,9 @@ project_update = ProjectUpdateview.as_view()
 class ProjectDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
 	model = Project
 	template_name = 'spa/project-delete.html'
-	success_url = reverse_lazy('student_dashboard')
+
+	def get_success_url(self):
+		return reverse_lazy('student_dashboard', kwargs={'pk': self.request.user.pk})
 
 	def test_func(self):
 		return self.request.user.is_staff or self.request.user.student in self.get_object().student_set.all()
@@ -269,7 +292,6 @@ class ProjectDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteV
 project_delete = ProjectDeleteView.as_view()
 
 class ProjectListView(LoginRequiredMixin, generic.ListView):
-	model = Project 
 	template_name = 'spa/project-list.html'
 
 	def get_queryset(self, *args, **kwargs):
@@ -278,4 +300,19 @@ class ProjectListView(LoginRequiredMixin, generic.ListView):
 		return queryset
 
 project_list = ProjectListView.as_view()
+
+class StudentListView(LoginRequiredMixin, generic.ListView):
+	template_name = 'spa/student-list.html'
+
+	def get_queryset(self, *args, **kwargs):
+		search = self.request.GET.get('search') or ''
+		queryset = Student.objects.filter(
+			Q(user__first_name__icontains=search) | 
+			Q(user__last_name__icontains=search) |
+			Q(user__email__icontains=search) |
+			Q(reg_no__icontains=search)
+		)
+		return queryset
+
+student_list = StudentListView.as_view()
 

@@ -24,8 +24,24 @@
 				</div>
 			</div>
 			<div class="form-check mb-2">
-				<input type="checkbox" {% if project.group_project %}checked{% endif %} disabled class="form-check-input" id="id_checkbox">
-				<label for="id_checkbox" class="form-check-label">Group Project</label>
+				<!-- <input type="checkbox" {% if project.group_project %}checked{% endif %} disabled class="form-check-input" id="id_checkbox">
+				<label for="id_checkbox" class="form-check-label">Group Project</label> -->
+				<p style="margin-left: -18px;">
+					Group Project: 
+					{% if project.group_project %}
+						<i class="fa-solid fa-circle-check text-primary f-lg"></i>
+					{% else %}
+						<i class="fa-solid fa-circle-xmark text-primary f-lg"></i>
+					{% endif %}
+				</p>
+				<p style="margin-left: -18px;">
+					Allocated: 
+					{% if project.allocated %}
+						<i class="fa-solid fa-circle-check text-primary f-lg"></i>
+					{% else %}
+						<i class="fa-solid fa-circle-xmark text-primary f-lg"></i>
+					{% endif %}
+				</p>
 			</div>
 			{% if request.user.is_staff or request.user.student in project.student_set.all %}
 				<div class="d-flex justify-content-between mt-3">
