@@ -12,4 +12,6 @@ urlpatterns = [
 	path('register-project/', views.register_project, name='register_project'),
 	path('project/<int:pk>/', views.project_detail, name='project_detail'),
 	path('project-update/<int:pk>/', views.project_update, name='project_update'),
+	path('project-delete/<int:pk>/', views.project_delete, name='project_delete'),
+	path('project-list/', views.project_list, name='project_list'),
 ]

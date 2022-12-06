@@ -1,15 +1,18 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views import generic
 from django.contrib.auth.models import User
 from django.views.generic.base import TemplateResponseMixin
 from django.contrib import messages
 from django.contrib import auth
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from allauth.account.views import SignupView
+from django.db.models import Q
 from .forms import LoginForm
 
 from .forms import UserRegistrationForm, StudentForm, UserForm, ProjectForm
-from .mixins import RedirectLoggedInUser
+from .mixins import RedirectLoggedInUser, StaffRequiredMixin
 from .models import Student, Project
 
 # Create your views here.
@@ -72,8 +75,6 @@ class LoginView(RedirectLoggedInUser, generic.TemplateView):
 			user = auth.authenticate(username=username, password=password)
 			if user is not None: # Checks if user exist
 				auth.login(request, user)
-				if user.is_staff:
-					return redirect('admin_dashboard')
 				return redirect('student_dashboard')
 		messages.error(request, "Incorrect password")
 		return self.render_to_response({'form': form})
@@ -81,8 +82,13 @@ class LoginView(RedirectLoggedInUser, generic.TemplateView):
 login = LoginView.as_view()
 
 
-class StudentDashboardView(generic.TemplateView):
+class StudentDashboardView(LoginRequiredMixin, generic.TemplateView):
 	template_name = 'spa/student-dashboard.html'
+
+	def dispatch(self, request, *args, **kwargs):
+		if request.user.is_staff:
+			return redirect('admin_dashboard') 
+		return super().dispatch(request, *args, **kwargs)
 
 	def post(self, request, *args, **kwargs):
 		# Save Updates
@@ -105,8 +111,13 @@ class StudentDashboardView(generic.TemplateView):
 
 student_dashboard = StudentDashboardView.as_view()
 
-class AdminDashboardView(generic.TemplateView):
+class AdminDashboardView(LoginRequiredMixin, generic.TemplateView):
 	template_name = 'spa/admin-dashboard.html'
+
+	def dispatch(self, request, *args, **kwargs):
+		if not request.user.is_staff:
+			return redirect('student_dashboard') 
+		return super().dispatch(request, *args, **kwargs)
 
 	def post(self, request, *args, **kwargs):
 		# Save Updates
@@ -124,52 +135,81 @@ class AdminDashboardView(generic.TemplateView):
 
 admin_dashboard = AdminDashboardView.as_view()
 
-def project_post_action(self, request):
+def project_post_action(self, request, action, pk=None):
 	# Get Data
-		form = ProjectForm(request.POST)
+		form = ProjectForm(request.POST) if action == 'register' else ProjectForm(request.POST, instance=Project.objects.get(pk=pk))
 		if form.is_valid():
 			data = form.cleaned_data
 			title = data['title']
 			case_study = data['case_study']
 			
-			title_exist = Project.objects.filter(title=title).exists()
-			case_study_exist = Project.objects.filter(case_study=case_study).exists()
+			title_exist = Project.objects.filter(title=title).exists() if action == 'register' else Project.objects.exclude(pk=pk).filter(title=title).exists()
+			case_study_exist = Project.objects.filter(case_study=case_study).exists() if action == 'register' else Project.objects.exclude(pk=pk).filter(case_study=case_study).exists()
 			# If project exists, flag user
 			if title_exist or case_study_exist:
 				messages.error(request, 'This Project Has Been Allocated')
 				return self.render_to_response({'form': form})
 			# If group members are added
 			try:
-				students = request.POST.get('students')
-				for student_id in students:
-					student = Student.objects.get(pk=int(student_id))
-					if student.project is not None:
-						# If one of the group members is in a project
-						messages.error(request, 'Project Has Already Been Allocated To One Of The Group Members')
-						return self.render_to_response({'form': form})
+				students = list(map(lambda x: int(x), request.POST.getlist('students')))
+				print(type(students))
+				if action == 'register':
+					for student_id in students:
+						student = Student.objects.get(pk=student_id)
+						if student.project is not None:
+							# If one of the group members is in a project
+							messages.error(request, 'Project Has Already Been Allocated To One Of The Group Members')
+							form_data = {
+								'title': title,
+								'case_study': case_study,
+								'students_id':students, 
+							}
+							context = {
+								'form': form,
+								'students': Student.objects.exclude(user=self.request.user),
+								'form_data': form_data,
+							}
+							print(form)
+							return self.render_to_response(context)
 			except:
 				pass
 			# Save project and associate it with user
 			form.save()
 			project = Project.objects.get(title=title)
-			request.user.student.project = project
-			request.user.student.save()
-			try:
-				for student_id in students:
-					# Associate group members to project
-					student = Student.objects.get(pk=int(student_id))
-					student.project = project
-					student.save()
-			except:
-				pass
-			return redirect('student_dashboard')
+
+			if action == 'register':
+				if not request.user.is_staff:
+					request.user.student.project = project
+					request.user.student.save()
+				try:
+					for student_id in students:
+						# Associate group members to project
+						student = Student.objects.get(pk=int(student_id))
+						student.project = project
+						student.save()
+				except:
+					pass
+			else:
+				try:
+					for student in project.student_set.all():
+						student.project = None
+						student.save()
+					for student_id in students:
+						# Associate group members to project
+						student = Student.objects.get(pk=int(student_id))
+						student.project = project
+						student.save()
+				except:
+					pass 
+
+			return redirect(reverse('project_detail', args=[project.pk]))
 		return self.render_to_response({'form': form})
 
-class RegisterProjectView(generic.TemplateView):
+class RegisterProjectView(LoginRequiredMixin, generic.TemplateView):
 	template_name = 'spa/register-project.html'
 
 	def post(self, request, *args, **kwargs):
-		return project_post_action(self, request)
+		return project_post_action(self, request, action='register')
 			
 
 	def get_context_data(self, *args, **kwargs):
@@ -181,7 +221,7 @@ class RegisterProjectView(generic.TemplateView):
 
 register_project = RegisterProjectView.as_view()
 
-class ProjectDetailView(generic.TemplateView):
+class ProjectDetailView(LoginRequiredMixin, generic.TemplateView):
 	template_name = 'spa/project-detail.html'
 
 	def get_context_data(self, *args, **kwargs):
@@ -194,16 +234,48 @@ class ProjectDetailView(generic.TemplateView):
 
 project_detail = ProjectDetailView.as_view()
 
-class ProjectUpdateview(generic.TemplateView):
+class ProjectUpdateview(LoginRequiredMixin, UserPassesTestMixin, generic.TemplateView):
 	template_name = 'spa/project-update.html'
+	project = None
+
+	def dispatch(self, request, *args, **kwargs):
+		self.project = Project.objects.get(pk=kwargs['pk'])
+		return super().dispatch(request, *args, **kwargs)
+
+	def post(self, request, *args, **kwargs):
+		return project_post_action(self, request, 'update', pk=kwargs['pk'])
 
 	def get_context_data(self, *args, **kwargs):
 		context = super().get_context_data(*args, **kwargs)
-		project = Project.objects.get(pk=kwargs['pk'])
-		context['project'] = project
+		# project = Project.objects.get(pk=kwargs['pk'])
+		context['project'] = self.project
 		context['form'] = ProjectForm()
 		context['students'] = Student.objects.all()
 		return context
 
+	def test_func(self):
+		return self.request.user.is_staff or self.request.user.student in self.project.student_set.all()
+
 project_update = ProjectUpdateview.as_view()
+
+class ProjectDeleteView(LoginRequiredMixin, UserPassesTestMixin, generic.DeleteView):
+	model = Project
+	template_name = 'spa/project-delete.html'
+	success_url = reverse_lazy('student_dashboard')
+
+	def test_func(self):
+		return self.request.user.is_staff or self.request.user.student in self.get_object().student_set.all()
+
+project_delete = ProjectDeleteView.as_view()
+
+class ProjectListView(LoginRequiredMixin, generic.ListView):
+	model = Project 
+	template_name = 'spa/project-list.html'
+
+	def get_queryset(self, *args, **kwargs):
+		search = self.request.GET.get('search') or ''
+		queryset = Project.objects.filter(Q(title__icontains=search) | Q(case_study__icontains=search))
+		return queryset
+
+project_list = ProjectListView.as_view()
 
