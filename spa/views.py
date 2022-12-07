@@ -83,7 +83,9 @@ login = LoginView.as_view()
 
 class RedirectToDashboard(View):
 	def dispatch(self, request, *args, **kwargs):
-		return redirect(reverse('student_dashboard', kwargs={'pk': request.user.pk}))
+		if request.user.is_authenticated:
+			return redirect(reverse('student_dashboard', kwargs={'pk': request.user.pk}))
+		return redirect('account_login')
 
 redirect_to_dashboard = RedirectToDashboard.as_view()
 

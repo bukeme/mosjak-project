@@ -25,18 +25,21 @@
 			
 				
 			<div class="fieldWrapper form-group">
+				<label for="id_first_name">First Name:</label>
 				<div class="form-group">
 					<input disabled type="text" name="first_name" id="id_first_name" placeholder="First Name" class="form-control" value="{{user.first_name}}">
 					<i class="fa-solid fa-circle-user input-icon"></i>
 				</div>
 			</div>
 			<div class="fieldWrapper form-group">
+				<label for="id_last_name">Last Name:</label>
 				<div class="form-group">
 					<input disabled type="text" name="last_name" id="id_last_name" placeholder="Last Name" class="form-control" value="{{user.last_name}}">
 					<i class="fa-solid fa-circle-user input-icon"></i>
 				</div>
 			</div>
 			<div class="fieldWrapper form-group">
+				<label for="id_reg_no">Reg. No.:</label>
 				<div class="form-group">
 					<input disabled type="text" name="reg_no" id="id_reg_no" placeholder="Reg No" class="form-control"  value="{{user.student.reg_no}}">
 					<i class="fa-solid fa-circle-user input-icon"></i>
@@ -44,35 +47,21 @@
 			</div>
 
 			<div class="fieldWrapper form-group">
+				<label for="id_department">Department:</label>
 				<div class="form-group">
-					
-					<!-- <select name="department" id="id_department" required class="form-control">
-						<option value="">Department</option>
-						<option value="Agricultural Engineering">Agricultural Engineering</option>
-						<option value="Electrical Engineering">Electrical Engineering</option>
-						<option value="Computer Engineering">Computer Engineering</option>
-						<option value="Petroleum Engineering">Petroleum Engineering</option>
-						<option value="Chemical Engineering">Chemical Engineering</option>
-						<option value="Mechanical Engineering">Mechanical Engineering</option>
-						<option value="Food Engineering">Food Engineering</option>
-						<option value="Civil Engineering">Civil Engineering</option>
-					</select> -->
 					<input disabled type="text" name="department" id="id_department" class="form-control"  value="{{user.student.department}}">
 					<i class="fa-regular fa-address-card input-icon"></i>
 				</div>
 			</div>
 			<div class="fieldWrapper form-group">
+				<label for="id_level">Level:</label>
 				<div class="form-group">
-					<!-- <select name="level" id="id_level" required class="form-control">
-						<option value="">Level</option>
-						<option value="500 Level">500 Level</option>
-						<option value="Spill Over">Spill Over</option>
-					</select> -->
 					<input disabled type="text" name="level" id="id_level" class="form-control"  value="{{user.student.level}}">
 					<i class="fa-regular fa-address-card input-icon"></i>
 				</div>
 			</div>
 			<div class="fieldWrapper form-group">
+				<label for="id_Email">Email:</label>
 				<div class="form-group">
 					<input disabled type="email" name="email" id="id_email" placeholder="Email" class="form-control" value="{{user.email}}">
 					<i class="fa-solid fa-envelope input-icon"></i>
@@ -100,7 +89,14 @@
 
 			{% else %}
 
-				<h5 class="mb-2">Your Project:</h5>
+				<h5 class="mb-2">
+					{% if request.user == user %}
+						Your 
+					{% else %}
+						{{user.first_name | title}}'s
+					{% endif %}
+					Project:
+				</h5>
 				
 				<div class="fieldWrapper form-group">
 					<label for="{{p_form.title.id_for_title}}">Title</label>
