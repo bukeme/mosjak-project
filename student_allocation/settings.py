@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-f6+xnmbeyb0r!el#mlu1t6h#hh8$*v8133t==)m8y9qgt^=$5!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -84,8 +84,12 @@ WSGI_APPLICATION = 'student_allocation.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'railway',
+        'USER': 'postgres',
+        'PASSWORD': 'zOlKjpWB7InrMM3wXMs1',
+        'HOST': 'containers-us-west-154.railway.app',
+        'PORT': '6508',
     }
 }
 
